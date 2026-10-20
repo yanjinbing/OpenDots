@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${APP_ORIGIN:?APP_ORIGIN must be set.}"
+container_hostname="$(hostname)"
+export APP_ORIGIN="${APP_ORIGIN//\$\{HOSTNAME\}/$container_hostname}"
+
 node /app/dist/server/browser/index.js &
 browser_pid=$!
 

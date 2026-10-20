@@ -5,10 +5,10 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 COPY package*.json ./
 RUN npm ci
-COPY . .
-RUN npm run build
 RUN npx playwright install --with-deps chromium \
   && chmod -R a+rX /ms-playwright
+COPY . .
+RUN npm run build
 
 FROM 01ai-registry.cn-shanghai.cr.aliyuncs.com/01-ai/mix/node:24-bookworm-slim AS runtime
 
@@ -16,6 +16,8 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=4310 \
     DATABASE_PATH=/data/opendots.sqlite \
+    WEB_SEARCH_PROVIDER=browser \
+    BROWSER_URL=http://127.0.0.1:4311 \
     BROWSER_HOST=127.0.0.1 \
     BROWSER_PORT=4311 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
