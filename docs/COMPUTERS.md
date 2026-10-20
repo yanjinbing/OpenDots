@@ -31,7 +31,7 @@ Open a Dot's **Computer** panel, enable computer access and the capabilities you
 
 ## Run the application in containers
 
-Configure the existing `OWNER_TOKEN` and `BROWSER_SECRET` as well as the computer secrets. Use the overlay that connects the app to the supervisor and computer network:
+Configure `BROWSER_SECRET` and the computer secrets. Use the overlay that connects the app to the supervisor and computer network:
 
 ```sh
 docker compose -f compose.yml -f compose.computers.yml -f compose.computers-app.yml build computer-image computer-supervisor app browser

@@ -76,7 +76,6 @@ Edit `.env` on the server and restart after changes:
 | `OPENAI_BASE_URL`                                    | Compatible model API endpoint                                          |
 | `OWNER_ID`                                           | Stable identity used for this deployment's conversations               |
 | `DATABASE_PATH`                                      | SQLite file containing pages, workspace and work metadata              |
-| `OWNER_TOKEN`                                        | Application access token; required for external bindings               |
 | `APP_ORIGIN`                                         | Comma-separated exact browser origins for a proxy or custom domain     |
 
 `npx copilotkit project select` deletes an `INTELLIGENCE_API_KEY` line and writes the same credential as `CPK_INTELLIGENCE_API_KEY`. The server reads either name. A non-empty `CPK_INTELLIGENCE_API_KEY` takes precedence over `INTELLIGENCE_API_KEY`.
@@ -178,13 +177,15 @@ A configured key is not evidence of a successful call. Verify microphone access,
 
 ## Containers
 
-Set `OWNER_TOKEN` and `BROWSER_SECRET` to different random secrets of at least 24 characters in `.env`, then run:
+Run the application container with:
 
 ```sh
 docker compose up --build -d
 ```
 
 Open http://localhost:4310. The app port binds to loopback. The browser service is optional: set a 24+ character `BROWSER_SECRET` and run `docker compose --profile browser up --build` to enable it; it has no published port. Application metadata lives in the `opendots-data` volume.
+
+OpenDots does not require application-level authentication. Keep the app on loopback or behind an access-controlled HTTPS reverse proxy; anyone who can reach it can operate the configured model, tools, connections, and computers. Set `APP_ORIGIN` to the exact public origin when using a reverse proxy.
 
 ```sh
 # Stop services while retaining saved data.

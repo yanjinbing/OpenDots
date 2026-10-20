@@ -140,20 +140,17 @@ export function pageRoutes(platform: Platform) {
     );
   });
   app.onError((error, c) =>
-    error instanceof SyntaxError
-      ? c.json({ error: 'Invalid JSON request.' }, 400)
-      : error instanceof PageError
-        ? c.json({ error: error.message }, error.status)
-        : error.message ===
-            'Conversation does not belong to this Dot and owner.'
-          ? c.json({ error: error.message }, 404)
-          : c.json(
-              {
-                error:
-                  'Page operation could not complete. Retry; your draft has not been discarded.',
-              },
-              503,
-            ),
+    error instanceof PageError
+      ? c.json({ error: error.message }, error.status)
+      : error.message === 'Conversation does not belong to this Dot and owner.'
+        ? c.json({ error: error.message }, 404)
+        : c.json(
+            {
+              error:
+                'Page operation could not complete. Retry; your draft has not been discarded.',
+            },
+            503,
+          ),
   );
   return app;
 }

@@ -71,6 +71,8 @@ it('renders local conversation titles without a CopilotKit provider', () => {
     instructions: 'Help',
     researchAllowed: true,
     memoryAllowed: true,
+    appsAllowed: false,
+    composioToolkits: [],
     createdAt: 1,
   };
   const html = renderToStaticMarkup(
