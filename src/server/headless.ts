@@ -1,4 +1,4 @@
-import { IntelligenceAgent } from '@copilotkit/core';
+import { ProxiedCopilotRuntimeAgent } from '@copilotkit/core';
 import type { Message } from '@ag-ui/core';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -16,8 +16,7 @@ export function currentTurnText(messages: Message[], error?: Error): string {
 }
 
 const runtimeInfoSchema = z.object({
-  mode: z.literal('intelligence'),
-  intelligence: z.object({ wsUrl: z.url() }),
+  mode: z.literal('sse'),
   agents: z.record(z.string(), z.unknown()),
 });
 
@@ -33,16 +32,14 @@ export async function runThreadTurn(
   signal.throwIfAborted();
   const response = await fetch(`${runtimeUrl}/info`, { headers, signal });
   if (!response.ok)
-    throw new Error(`Intelligence runtime returned HTTP ${response.status}.`);
+    throw new Error(`Local runtime returned HTTP ${response.status}.`);
   const info = runtimeInfoSchema.parse(await response.json());
   if (!Object.hasOwn(info.agents, dotId))
     throw new Error('The selected Dot is unavailable in the runtime.');
-  // Core's runtime discovery is browser-only. Use the SDK's Node-compatible
-  // Intelligence agent for voice compute and scheduled server turns.
-  const agent = new IntelligenceAgent({
-    url: info.intelligence.wsUrl,
+  const agent = new ProxiedCopilotRuntimeAgent({
     runtimeUrl,
     agentId: dotId,
+    runtimeMode: 'sse',
     headers,
     fetch: (input, init) =>
       fetch(input, {
@@ -60,6 +57,8 @@ export async function runThreadTurn(
   const stop = () => agent.abortRun();
   signal.addEventListener('abort', stop, { once: true });
   try {
+    signal.throwIfAborted();
+    await agent.connectAgent();
     signal.throwIfAborted();
     const idPrefix =
       metadata?.opendotsSource === 'voice_receipt'
@@ -79,6 +78,5 @@ export async function runThreadTurn(
   } finally {
     signal.removeEventListener('abort', stop);
     subscription.unsubscribe();
-    await agent.detachActiveRun();
   }
 }

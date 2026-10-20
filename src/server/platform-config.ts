@@ -7,7 +7,7 @@ const INTELLIGENCE_API_KEY_ENV_NAMES = [
   'INTELLIGENCE_API_KEY',
 ] as const;
 export const INTELLIGENCE_KEY_MISSING_LABEL = `${INTELLIGENCE_API_KEY_ENV_NAMES[1]} (or ${INTELLIGENCE_API_KEY_ENV_NAMES[0]})`;
-export const DEFAULT_AGENT_RUN_TIMEOUT_MS = 90_000;
+export const DEFAULT_AGENT_RUN_TIMEOUT_MS = 900_000;
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
 export function intelligenceApiKeyFromEnv(
@@ -76,11 +76,10 @@ export interface PlatformConfig extends WebConfig {
 }
 export function setupStatus(
   config: PlatformConfig,
-  slack = 'not_configured',
-  activationFailed = false,
+  _slack = 'not_configured',
+  _activationFailed = false,
 ): SetupStatus {
   const missing = [
-    !config.intelligenceKey && INTELLIGENCE_KEY_MISSING_LABEL,
     !config.apiKey && 'OPENAI_API_KEY',
     !config.model && 'OPENAI_MODEL',
   ].filter((item): item is string => !!item);
@@ -89,10 +88,8 @@ export function setupStatus(
     config.slackTeam &&
     config.slackUsers.length
   );
-  slack = declaredSlack
-    ? activationFailed && slack !== 'online'
-      ? 'activation_failed'
-      : slack
+  const slack = declaredSlack
+    ? 'unavailable'
     : config.slackChannel || config.slackTeam || config.slackUsers.length
       ? 'setup_required'
       : 'not_configured';

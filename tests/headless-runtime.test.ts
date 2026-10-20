@@ -3,7 +3,7 @@ import type { AgentSubscriber } from '@ag-ui/client';
 import { runThreadTurn } from '../src/server/headless.js';
 const sdk = vi.hoisted(() => ({
   run: vi.fn(),
-  detach: vi.fn(),
+  connect: vi.fn(),
   abort: vi.fn(),
   message: vi.fn(),
   config: vi.fn(),
@@ -12,7 +12,7 @@ const sdk = vi.hoisted(() => ({
   subscriber: undefined as AgentSubscriber | undefined,
 }));
 vi.mock('@copilotkit/core', () => ({
-  IntelligenceAgent: class {
+  ProxiedCopilotRuntimeAgent: class {
     set threadId(id: string) {
       sdk.thread(id);
     }
@@ -29,8 +29,8 @@ vi.mock('@copilotkit/core', () => ({
     runAgent() {
       return sdk.run();
     }
-    detachActiveRun() {
-      return sdk.detach();
+    connectAgent() {
+      return sdk.connect();
     }
     abortRun() {
       sdk.abort();
@@ -40,6 +40,7 @@ vi.mock('@copilotkit/core', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   sdk.subscriber = undefined;
+  sdk.connect.mockResolvedValue({ newMessages: [] });
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -47,8 +48,7 @@ afterEach(() => {
 it('executes server turns without browser-only Core discovery and tears down the SDK stream', async () => {
   const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
     Response.json({
-      mode: 'intelligence',
-      intelligence: { wsUrl: 'wss://example.com/client' },
+      mode: 'sse',
       agents: { dot: {} },
     }),
   );
@@ -77,7 +77,7 @@ it('executes server turns without browser-only Core discovery and tears down the
     expect.objectContaining({
       agentId: 'dot',
       runtimeUrl: 'https://runtime.test',
-      url: 'wss://example.com/client',
+      runtimeMode: 'sse',
     }),
   );
   expect(sdk.message).toHaveBeenCalledWith(
@@ -89,16 +89,15 @@ it('executes server turns without browser-only Core discovery and tears down the
     }),
   );
   expect(sdk.thread).toHaveBeenCalledWith('thread');
+  expect(sdk.connect).toHaveBeenCalledOnce();
   expect(sdk.unsubscribe).toHaveBeenCalledOnce();
-  expect(sdk.detach).toHaveBeenCalledOnce();
 });
 it('marks scheduled user prompts while preserving their text and user role', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
-        mode: 'intelligence',
-        intelligence: { wsUrl: 'wss://example.com/client' },
+        mode: 'sse',
         agents: { dot: {} },
       }),
     ),
@@ -152,8 +151,7 @@ it('rejects a Dot missing from runtime metadata', async () => {
     'fetch',
     vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
-        mode: 'intelligence',
-        intelligence: { wsUrl: 'wss://example.com' },
+        mode: 'sse',
         agents: {},
       }),
     ),
@@ -175,8 +173,7 @@ it('aborts the running SDK turn and releases the subscriber on cancellation', as
     'fetch',
     vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
-        mode: 'intelligence',
-        intelligence: { wsUrl: 'wss://example.com/client' },
+        mode: 'sse',
         agents: { dot: {} },
       }),
     ),
@@ -200,7 +197,6 @@ it('aborts the running SDK turn and releases the subscriber on cancellation', as
   ).rejects.toThrow('Call ended');
   expect(sdk.abort).toHaveBeenCalledOnce();
   expect(sdk.unsubscribe).toHaveBeenCalledOnce();
-  expect(sdk.detach).toHaveBeenCalledOnce();
   controller.abort();
   expect(sdk.abort).toHaveBeenCalledOnce();
 });
@@ -209,8 +205,7 @@ it('cleans up rejected SDK turns while preserving the error', async () => {
     'fetch',
     vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
-        mode: 'intelligence',
-        intelligence: { wsUrl: 'wss://example.com/client' },
+        mode: 'sse',
         agents: { dot: {} },
       }),
     ),
@@ -227,5 +222,4 @@ it('cleans up rejected SDK turns while preserving the error', async () => {
     ),
   ).rejects.toThrow('Runtime socket failed');
   expect(sdk.unsubscribe).toHaveBeenCalledOnce();
-  expect(sdk.detach).toHaveBeenCalledOnce();
 });

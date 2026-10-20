@@ -1,5 +1,5 @@
 # Source comes from the exact OpenBot revision in compose.computers.yml.
-FROM oven/bun:1.3.14-alpine
+FROM 01ai-registry.cn-shanghai.cr.aliyuncs.com/01-ai/mix/bun:1.3.14-alpine
 WORKDIR /app
 COPY --from=openbot supervisor/package.json supervisor/bun.lock ./
 RUN bun install --frozen-lockfile

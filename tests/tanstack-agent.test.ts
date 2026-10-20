@@ -344,13 +344,13 @@ it('reports a turn that hits the time limit as a RUN_ERROR instead of ending sil
         }),
     );
     const finished = lastValueFrom(f.agent.run(f.input).pipe(toArray()));
-    await vi.advanceTimersByTimeAsync(90_001);
+    await vi.advanceTimersByTimeAsync(900_001);
     const events = await finished;
     expect(events).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           type: EventType.RUN_ERROR,
-          message: expect.stringMatching(/time limit/i),
+          message: expect.stringMatching(/900 second time limit/i),
         }),
       ]),
     );

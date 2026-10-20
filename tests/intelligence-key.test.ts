@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { Platform } from '../src/server/platform.js';
 import {
   INTELLIGENCE_KEY_MISSING_LABEL,
@@ -9,6 +9,9 @@ import {
 } from '../src/server/platform-config.js';
 import { Store } from '../src/server/store.js';
 import { WorkspaceStore } from '../src/server/workspace.js';
+import { completion } from './fixtures/model-stream.js';
+
+afterEach(() => vi.restoreAllMocks());
 
 const configured: PlatformConfig = {
   apiKey: 'fixture',
@@ -41,7 +44,7 @@ it('accepts the CLI project key and still accepts the template name', () => {
   expect(intelligenceApiKeyFromEnv({})).toBeUndefined();
 });
 
-it('reports either accepted name from the same label used by setup status and the copilotkit error', async () => {
+it('accepts legacy Intelligence keys without requiring one for local chat', async () => {
   const key = intelligenceApiKeyFromEnv({
     CPK_INTELLIGENCE_API_KEY: 'cpk-from-cli',
   });
@@ -51,7 +54,8 @@ it('reports either accepted name from the same label used by setup status and th
   });
   expect(INTELLIGENCE_KEY_MISSING_LABEL).toContain('CPK_INTELLIGENCE_API_KEY');
   expect(INTELLIGENCE_KEY_MISSING_LABEL).toContain('INTELLIGENCE_API_KEY');
-  expect(setupStatus(configured).missing).toContain(
+  expect(setupStatus(configured).missing).toEqual([]);
+  expect(setupStatus(configured).missing).not.toContain(
     INTELLIGENCE_KEY_MISSING_LABEL,
   );
 
@@ -62,11 +66,70 @@ it('reports either accepted name from the same label used by setup status and th
     const response = await platform.handle(
       new Request('http://127.0.0.1/api/copilotkit/info'),
     );
-    expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({
-      error: `Setup required: ${INTELLIGENCE_KEY_MISSING_LABEL}.`,
-    });
-    expect(platform.setup().missing).toContain(INTELLIGENCE_KEY_MISSING_LABEL);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ mode: 'sse' });
+    expect(platform.setup().missing).not.toContain(
+      INTELLIGENCE_KEY_MISSING_LABEL,
+    );
+  } finally {
+    store.close();
+    workspace.close();
+  }
+});
+
+it('creates conversations locally without contacting Intelligence', async () => {
+  const store = new Store(':memory:');
+  const workspace = new WorkspaceStore(':memory:', 'owner');
+  try {
+    const platform = new Platform(store, workspace, configured);
+    const dot = workspace.dots()[0];
+    const conversation = await platform.createConversation(dot.id, 'Local');
+    expect(workspace.requireThread(conversation.id)).toEqual(conversation);
+    expect(conversation.title).toBe('Local');
+  } finally {
+    store.close();
+    workspace.close();
+  }
+});
+
+it('retains completed chat messages in the local runner', async () => {
+  const store = new Store(':memory:');
+  const workspace = new WorkspaceStore(':memory:', 'owner');
+  try {
+    const platform = new Platform(store, workspace, configured);
+    const dot = workspace.dots()[0];
+    workspace.bindThread('local-thread', dot.id, 'Local');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      completion({ role: 'assistant', content: 'Stored locally.' }),
+    );
+    const response = await platform.handle(
+      new Request(`http://localhost/api/copilotkit/agent/${dot.id}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threadId: 'local-thread',
+          runId: 'local-run',
+          state: {},
+          context: [],
+          messages: [
+            { id: 'question', role: 'user', content: 'Remember this.' },
+          ],
+          tools: [],
+          forwardedProps: {},
+        }),
+      }),
+    );
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(platform.runner.getThreadMessages('local-thread')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ role: 'user', content: 'Remember this.' }),
+        expect.objectContaining({
+          role: 'assistant',
+          content: 'Stored locally.',
+        }),
+      ]),
+    );
   } finally {
     store.close();
     workspace.close();

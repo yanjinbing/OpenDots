@@ -8,6 +8,7 @@ export default defineConfig({
   server: {
     strictPort: true,
     host: '127.0.0.1',
+    allowedHosts: ['opendots.sandbox.airacloud.com'],
     proxy: { '/api': 'http://127.0.0.1:4310' },
   },
 });

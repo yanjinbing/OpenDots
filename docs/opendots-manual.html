@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenDots 功能说明与使用手册</title>
+  <style>
+    :root{--ink:#1f2933;--muted:#66717e;--line:#d9dee5;--paper:#fff;--wash:#f4f6f8;--accent:#0f766e;--accent2:#115e59;--warn:#8a5a00;--code:#17202a}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:var(--wash);font:16px/1.75 system-ui,-apple-system,"Segoe UI","Noto Sans SC",Arial,sans-serif}
+    .shell{display:grid;grid-template-columns:250px minmax(0,900px);gap:40px;max-width:1230px;margin:0 auto;padding:32px 24px 75px}aside{position:sticky;top:20px;align-self:start;max-height:calc(100vh - 40px);overflow:auto;padding:16px 0}aside strong{display:block;color:var(--accent2);font-size:14px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}aside a{display:block;color:var(--muted);text-decoration:none;padding:3px 10px;border-left:2px solid transparent;font-size:14px}aside a:hover{color:var(--accent2);border-left-color:var(--accent)}
+    main{background:var(--paper);border:1px solid var(--line);padding:48px 58px 70px;box-shadow:0 14px 36px #15202b0b}h1,h2,h3{line-height:1.25;letter-spacing:-.01em;color:#17212b}h1{font-size:42px;margin:0 0 12px}h2{font-size:27px;margin:50px 0 17px;padding-top:12px;border-top:1px solid var(--line)}h3{font-size:19px;margin:26px 0 8px}p{margin:10px 0 15px}.lead{color:var(--muted);font-size:19px;max-width:730px}.meta,.small{color:var(--muted);font-size:13px}.meta{margin:19px 0 30px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.chip{border:1px solid #a7d6d1;color:var(--accent2);background:#effaf8;padding:2px 9px;border-radius:999px;font-size:13px}
+    .callout{border-left:4px solid var(--accent);background:#eef9f7;padding:13px 16px;margin:19px 0}.warning{border-left-color:#d69e2e;background:#fff7df;color:#5e4300}code{background:#eef1f4;border-radius:3px;padding:1px 5px;font:.9em ui-monospace,SFMono-Regular,Consolas,monospace}pre{overflow:auto;color:#edf4f7;background:var(--code);border-radius:5px;padding:16px 18px;line-height:1.55;font-size:13px}pre code{background:none;padding:0;color:inherit}table{width:100%;border-collapse:collapse;margin:15px 0 23px;font-size:14px}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:#f0f3f5;color:#35404a}ul,ol{padding-left:24px}li{margin:4px 0}a{color:var(--accent2)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{border:1px solid var(--line);padding:14px 16px;background:#fcfdfd}.card h3{margin-top:0;font-size:17px}.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0}.node{border:1px solid #a7d6d1;background:#effaf8;padding:7px 11px;font-size:14px}.arrow{color:var(--muted)}footer{color:var(--muted);border-top:1px solid var(--line);margin-top:50px;padding-top:17px;font-size:13px}
+    @media(max-width:850px){.shell{display:block;padding:0}aside{position:static;max-height:none;padding:17px 20px;background:#eef2f4;border-bottom:1px solid var(--line)}aside nav{columns:2}main{border:0;padding:29px 20px 56px;box-shadow:none}h1{font-size:34px}.grid{grid-template-columns:1fr}}@media print{body{background:#fff}.shell{display:block;padding:0}aside{display:none}main{border:0;box-shadow:none;padding:0}h2{break-before:page}pre{white-space:pre-wrap}}
+  </style>
+</head>
+<body>
+<div class="shell">
+<aside><strong>OpenDots 手册</strong><nav>
+  <a href="#summary">产品概览</a><a href="#architecture">架构与数据</a><a href="#quickstart">快速启动</a><a href="#config">配置参考</a><a href="#spaces">Spaces 与页面</a><a href="#dots">Dots 与聊天</a><a href="#research">联网研究</a><a href="#computers">Computer 沙箱</a><a href="#connections">MCP Connections</a><a href="#voice">语音通话</a><a href="#slack">Slack</a><a href="#learning">Automatic Learning</a><a href="#operations">运维与安全</a><a href="#troubleshooting">故障排查</a><a href="#sources">来源</a>
+</nav></aside>
+<main>
+<header><h1>OpenDots 功能说明与使用手册</h1><p class="lead">一个可自托管的 AI coworker 工作区：让不同职责的 Dot 在文字、网页、电脑、语音和 Slack 之间持续工作，并把结果沉淀为可编辑的 Space 页面。</p><p class="meta">本文基于当前仓库源码与配置生成。OpenDots 是模板和早期项目，不是开箱即用的托管 SaaS；会话、模型、语音和第三方连接需要自行配置。</p><div class="chips"><span class="chip">Node.js 24</span><span class="chip">React + Vite</span><span class="chip">SQLite 元数据</span><span class="chip">CopilotKit Intelligence</span><span class="chip">OpenBot Computer</span></div></header>
+
+<section id="summary"><h2>产品概览</h2><p>OpenDots 把一个个人 AI 工作区拆成三个核心对象：<strong>Space</strong> 管理文档，<strong>Dot</strong> 表示有角色和权限的 specialist，<strong>Conversation</strong> 保存与某个 Dot 的工作上下文。用户可以直接编辑页面，也可以让 Dot 研究、写作、修改页面或操作自己的隔离电脑。</p><div class="grid"><div class="card"><h3>Spaces 与页面</h3><p>页面库支持搜索、网格/列表视图、嵌套子页面、Markdown 源码和富文本编辑。自动保存带状态提示，修订号检查可避免旧草稿覆盖新内容。</p></div><div class="card"><h3>Specialist Dots</h3><p>每个 Dot 有名称、角色指令、默认 Space、可访问 Space、研究权限、记忆权限和可选学习容器。</p></div><div class="card"><h3>联网与工具</h3><p>Dot 可以通过 Parallel 研究公共网页、调用授权的 MCP Connection，或在人工批准后执行非只读动作。</p></div><div class="card"><h3>Computer 与语音</h3><p>可选 OpenBot computer 为每个 Dot 提供独立浏览器、文件区和 Shell；可选 Realtime 语音沿用同一会话和工具权限。</p></div></div><div class="callout warning"><strong>边界说明：</strong>当前实现是 single-owner 工作区，不包含多用户身份、邀请、共享编辑、文件上传或任意交互式页面嵌入。E2B 不是内置 Computer 后端；Computer 当前使用 OpenBot 容器服务。</div></section>
+
+<section id="architecture"><h2>架构与数据</h2><div class="flow"><span class="node">浏览器 UI</span><span class="arrow">→</span><span class="node">Vite / React :5173</span><span class="arrow">→ /api</span><span class="node">Node/Hono API :4310</span></div><div class="flow"><span class="node">Node Runtime</span><span class="arrow">↔</span><span class="node">CopilotKit Intelligence / Threads</span><span class="arrow">↔</span><span class="node">OpenAI-compatible Model</span></div><p>服务入口位于 <a href="../src/server/index.ts">src/server/index.ts</a>。开发模式由 <code>concurrently</code> 同时运行 Node API 和 Vite；Vite 的 <code>/api</code> 代理指向 <code>4310</code>。生产构建由 Node 服务在 <code>4310</code> 提供静态文件。</p><table><thead><tr><th>数据</th><th>存储位置</th><th>说明</th></tr></thead><tbody><tr><td>Spaces、页面、Dots、权限、任务、连接配置</td><td>SQLite，默认 <code>data/opendots.sqlite</code></td><td>应用元数据和页面内容。</td></tr><tr><td>会话消息、工具调用、运行事件</td><td>CopilotKit Intelligence</td><td>SQLite 不包含完整会话历史；备份需要同时考虑 Intelligence 项目。</td></tr><tr><td>Dot computer 文件和浏览器 profile</td><td>OpenBot 为每个 Dot 管理的容器卷</td><td>与 Space 页面分离，停止/启动后可保留。</td></tr></tbody></table></section>
+
+<section id="quickstart"><h2>快速启动</h2><h3>1. 安装并运行开发模式</h3><pre><code>git clone https://github.com/CopilotKit/OpenDots.git
+cd OpenDots
+npm ci
+cp .env.example .env
+npm run dev</code></pre><p>打开 <a href="http://127.0.0.1:5173">http://127.0.0.1:5173</a>。开发模式同时启动前端 <code>5173</code> 和 API <code>4310</code>，终端按 <code>Ctrl+C</code> 会同时停止两者。</p><h3>2. 接入对话和模型</h3><p>页面编辑和工作区配置不依赖聊天服务；要让 Dot 回复，需要 Intelligence 项目密钥、模型 API 密钥和模型名：</p><pre><code>CPK_INTELLIGENCE_API_KEY=your-project-key
+OPENAI_API_KEY=your-model-key
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=your-model-name</code></pre><p>Hosted Intelligence 可执行：</p><pre><code>npx copilotkit@latest login
+npx copilotkit@latest project select</code></pre><p><code>project select</code> 会写入 <code>CPK_INTELLIGENCE_API_KEY</code>。不要在本仓库执行 <code>copilotkit onboard</code>，因为 OpenDots 已经包含 CopilotKit 集成。</p><h3>3. 生产构建</h3><pre><code>npm run build
+npm start</code></pre><p>生产服务默认监听 <code>4310</code>。外部部署需要反向代理、HTTPS 和与域名匹配的 <code>APP_ORIGIN</code>。</p></section>
+
+<section id="config"><h2>配置参考</h2><table><thead><tr><th>变量</th><th>用途</th><th>必需性</th></tr></thead><tbody><tr><td><code>HOST</code> / <code>PORT</code></td><td>Node API 绑定地址，默认 <code>127.0.0.1:4310</code></td><td>可选</td></tr><tr><td><code>DATABASE_PATH</code></td><td>SQLite 文件路径</td><td>可选</td></tr><tr><td><code>OWNER_ID</code></td><td>持久化会话所属的稳定 owner 标识</td><td>建议设置</td></tr><tr><td><code>OWNER_TOKEN</code></td><td>外部绑定或非本机监听时的访问令牌；外部绑定至少 24 字符</td><td>外部部署必需</td></tr><tr><td><code>CPK_INTELLIGENCE_API_KEY</code> 或 <code>INTELLIGENCE_API_KEY</code></td><td>会话和 Thread 项目密钥</td><td>聊天必需</td></tr><tr><td><code>INTELLIGENCE_API_URL</code> / <code>INTELLIGENCE_GATEWAY_WS_URL</code></td><td>自托管或本地 Intelligence endpoint</td><td>按部署方式</td></tr><tr><td><code>OPENAI_API_KEY</code> / <code>OPENAI_MODEL</code></td><td>TanStack AI 使用的模型凭证和模型名</td><td>聊天必需</td></tr><tr><td><code>OPENAI_BASE_URL</code></td><td>OpenAI-compatible 服务地址</td><td>可选，默认 OpenAI</td></tr><tr><td><code>APP_ORIGIN</code></td><td>允许的精确浏览器来源，可逗号分隔</td><td>公网/反向代理必配</td></tr><tr><td><code>WEB_SEARCH_PROVIDER</code></td><td><code>parallel</code>、<code>browser</code> 或 <code>disabled</code></td><td>默认 parallel</td></tr><tr><td><code>COMPUTER_SUPERVISOR_URL</code>、<code>COMPUTER_SUPERVISOR_TOKEN</code>、<code>COMPUTER_TOKEN</code></td><td>OpenBot supervisor 和 Dot computer 凭证</td><td>使用 Computer 时必需</td></tr><tr><td><code>VOICE_API_KEY</code> / <code>VOICE_MODEL</code></td><td>Realtime 语音服务</td><td>语音时必需</td></tr></tbody></table><div class="callout">密钥只放在服务端 <code>.env</code>，不要放进 React 客户端变量、页面内容或 Git。模板的 <code>.env</code> 已被 Git 忽略。</div></section>
+
+<section id="spaces"><h2>Spaces 与页面</h2><ol><li>在左侧选择 Space，进入页面库；可搜索标题和正文，切换网格或列表视图。</li><li>点击新建页面，填写标题后使用富文本编辑器；支持标题、列表、任务清单、表格、引用、代码和 Slash Commands。</li><li>编辑会自动保存，也可使用 Cmd/Ctrl+S 立即保存。保存失败时草稿保留在编辑器中，修订冲突不会静默覆盖服务器版本。</li><li>页面可创建子页面、移动、删除或切换 Markdown 源码模式。删除页面时其子页面会上移到被删除页面的父级。</li><li>打开页面对话，可以让有该 Space 权限的 Dot 阅读当前页面并提出修订；先保存手工编辑，再请求 Dot 修改。</li></ol><p>页面路由和冲突检查由 <a href="../src/server/page-routes.ts">src/server/page-routes.ts</a> 与 <a href="../src/server/pages.ts">src/server/pages.ts</a> 实现。</p></section>
+
+<section id="dots"><h2>Dots 与文字聊天</h2><h3>创建和配置 Dot</h3><ol><li>打开 Dot 设置，填写名称和角色指令，例如“你是一个研究助理，引用来源并明确不确定性”。</li><li>选择它可以访问的 Space，并指定保存页面的默认 Space。</li><li>按需开启研究权限、记忆权限、Computer 能力和连接工具。权限默认应从最小范围开始。</li><li>保存后新建 Conversation；旧会话会保留创建时绑定的 Dot 和 Learning 容器。</li></ol><h3>发送工作请求</h3><p>在聊天框描述目标、约束和交付物。Dot 通过 AG-UI 流式返回文本、来源、工具调用和状态。页面上下文会在页面对话中自动附加，但页面内容属于不可信数据，重要修改前应让 Dot 重新读取页面。</p><h3>先审阅再保存</h3><p>要求“先给我草稿，不要直接保存”时，Dot 会调用 <code>review_space_page</code>，界面显示 Approve &amp; save / Decline。批准后才写入授权 Space；草稿变化后需要重新审阅。</p><h3>背景任务</h3><p>可从会话创建周期性任务。任务会在原始 Conversation 中运行；运行中断不会自动假设成功，需要检查页面和 Computer 操作后显式重试。</p></section>
+
+<section id="research"><h2>联网研究</h2><p>默认 <code>WEB_SEARCH_PROVIDER=parallel</code>。Dot 可以搜索主题或读取用户提供的公共 URL，结果包含来源链接；轻量匿名额度可用，生产或较高额度可设置 <code>PARALLEL_API_KEY</code>。</p><table><thead><tr><th>模式</th><th>服务</th><th>适用场景</th></tr></thead><tbody><tr><td><code>parallel</code></td><td>Parallel MCP</td><td>主题搜索、提取多个公共来源；不需要本地浏览器 worker。</td></tr><tr><td><code>browser</code></td><td>独立 Playwright Chromium 服务</td><td>只读取指定公共 URL；JavaScript 关闭，私网、认证页和重定向受限。</td></tr><tr><td><code>disabled</code></td><td>无研究工具</td><td>禁用联网研究。</td></tr></tbody></table><p>启用 browser 模式：</p><pre><code>npx playwright install chromium
+npm run browser</code></pre><p>或者使用 Compose profile：<code>docker compose --profile browser up --build -d</code>。浏览器服务与 Dot Computer 不同：前者是只读网页抓取，后者是可交互的独立电脑。</p></section>
+
+<section id="computers"><h2>Computer 沙箱</h2><p>OpenDots 当前的 Computer 后端是固定的 OpenBot computer supervisor，不是 E2B。每个 Dot 获得独立的容器、浏览器 profile 和 workspace；OpenDots 不会回退到宿主机 Shell 或文件系统。</p><h3>启动本地 Computer 服务</h3><pre><code># .env 中设置两个不同的 24+ 字符随机密钥
+COMPUTER_SUPERVISOR_URL=http://127.0.0.1:4312
+COMPUTER_SUPERVISOR_TOKEN=...
+COMPUTER_TOKEN=...
+COMPUTER_NAMESPACE=opendots
+
+docker compose -f compose.computers.yml build computer-image computer-supervisor
+docker compose -f compose.computers.yml up -d computer-supervisor
+npm run dev</code></pre><p>在 Dot 的 Computer 面板开启 Computer 和所需权限，然后 Start。可用能力包括：</p><ul><li>浏览器：navigate、snapshot、screenshot、click、type、scroll。</li><li>文件：在 Dot workspace 内列出、读取和写入相对路径。</li><li>Shell：在该 Dot 容器内执行有时限的命令。</li><li>人工接管：owner 暂停 agent 输入后操作浏览器，再释放控制。</li></ul><div class="callout warning"><strong>隔离边界：</strong>默认是普通 Docker 容器，共享宿主机 kernel；<code>COMPUTER_RUNTIME=runsc</code> 只能选择宿主机已经安装的 gVisor，不会自动安装。仓库没有 E2B、Firecracker 或 Kata 的适配器。</div></section>
+
+<section id="connections"><h2>MCP Connections</h2><p>Connections 允许 Dot 使用邮件、日历、GitHub 或自建 MCP 服务。连接配置保存在服务端，工具按 Dot 单独启用。</p><ul><li>只读工具可直接执行并返回结果。</li><li>写入、发送、删除或其他非只读动作会产生 <strong>Approve &amp; run</strong> 卡片。</li><li>用户拒绝后，Dot 不应通过另一个工具绕过批准。</li><li>连接返回的数据应视为不可信输入，不能覆盖系统指令。</li></ul><p>连接字段、工具权限和审批路由见 <a href="../docs/CONNECTIONS.md">docs/CONNECTIONS.md</a>、<a href="../src/server/connection-routes.ts">src/server/connection-routes.ts</a>。</p></section>
+
+<section id="voice"><h2>语音通话</h2><p>语音使用浏览器 WebRTC 与 Realtime provider 建立连接；计算型工作仍委派给当前 Dot 的 Intelligence Conversation，因此文本和语音可以共享上下文和权限。</p><pre><code>VOICE_API_KEY=...
+VOICE_MODEL=gpt-realtime-2.1
+VOICE_NAME=marin</code></pre><p>浏览器需要麦克风权限，公网部署需要 HTTPS。通话界面提供计时、用户/Dot 字幕、麦克风静音、扬声器静音、最小化和挂断；结束后会保存 call receipt。</p></section>
+
+<section id="slack"><h2>Slack</h2><p>Slack 使用 CopilotKit 托管 Channels SDK，不需要在 OpenDots 中另写 webhook 或 Socket Mode 服务。先在同一个 Intelligence 项目创建 managed channel，再在服务器配置：</p><pre><code>SLACK_CHANNEL_NAME=opendots
+SLACK_TEAM_ID=T...
+SLACK_USER_IDS=U...
+SLACK_DOT_ID=...</code></pre><p>只允许指定 workspace 和 user ID 触发 Dot。安装 bot 后，在它能访问的 Slack 频道中 mention；同一 thread 的后续消息会继续使用同一个 specialist。详见 <a href="../docs/SETUP.md#slack">Slack setup</a>。</p></section>
+
+<section id="learning"><h2>Automatic Learning</h2><p>Automatic Learning 使用 Intelligence 项目中的 Learning container 收集相关会话证据、生成候选技能，并在审阅发布后向新回合交付技能。它不是本地执行沙箱。</p><ol><li>在 Intelligence Learning 中创建合法 ID，例如 <code>research-workflow</code>。</li><li>在 Dot 设置中填写 Learning container ID；可选择 Use published skills。</li><li>只对新创建的 Conversation 生效，旧会话不会追溯加入。</li><li>在 Intelligence 中运行、审阅和发布技能，启用 Skill delivery 后再验证工具调用。</li></ol></section>
+
+<section id="operations"><h2>运维与安全</h2><h3>启动、停止、检查</h3><pre><code># 开发模式，前台同时启动前端和后端
+npm run dev
+
+# 构建并启动生产服务
+npm run build
+npm start
+
+# 健康检查
+curl http://127.0.0.1:5173/
+curl http://127.0.0.1:4310/api/workspace</code></pre><h3>反向代理</h3><p>公网域名必须配置精确的 <code>APP_ORIGIN</code>，并由 HTTPS 反向代理转发到应用。开发模式通常是 Nginx → Vite <code>5173</code> → API <code>4310</code>；生产模lian式可让 Node <code>4310</code> 同时提供静态页面和 API。</p><h3>安全要点</h3><ul><li>外部监听时设置至少 24 字符的 <code>OWNER_TOKEN</code>；不要把 API 直接暴露给互联网。</li><li>各类密钥分开生成和保管，不要提交到 Git。</li><li>Computer 的 Shell 权限只给确有需要的 Dot；容器共享宿主机 kernel，不应视为 VM 级隔离。</li><li>为页面、连接结果、Slack 消息和网页内容保留“不可信数据”边界；审批前不要执行外部副作用。</li><li>可用 <code>DO_NOT_TRACK=1</code> 或 <code>COPILOTKIT_TELEMETRY_DISABLED=true</code> 关闭遥测。</li></ul></section>
+
+<section id="troubleshooting"><h2>故障排查</h2><table><thead><tr><th>现象</th><th>检查</th><th>处理</th></tr></thead><tbody><tr><td>页面能打开但 Dot 不回复</td><td>Settings &amp; setup 或 <code>/api/workspace</code> 的 <code>setup.missing</code></td><td>补齐 Intelligence key、<code>OPENAI_API_KEY</code>、<code>OPENAI_MODEL</code>，然后重启。</td></tr><tr><td>公网访问 403</td><td>检查 <code>APP_ORIGIN</code> 是否精确匹配 scheme、域名和端口</td><td>加入实际 HTTP/HTTPS 来源；同时检查 Vite/Nginx 的 Host 白名单。</td></tr><tr><td><code>dist/client</code> 不存在</td><td>当前是否运行 <code>npm run dev</code></td><td>开发模式可忽略；生产模式先执行 <code>npm run build</code>。</td></tr><tr><td>研究工具不可用</td><td><code>WEB_SEARCH_PROVIDER</code> 与浏览器配置</td><td>parallel 模式检查模型配置；browser 模式还需 <code>BROWSER_URL</code> 和 <code>BROWSER_SECRET</code>。</td></tr><tr><td>Computer unavailable</td><td>Docker、supervisor health、三个 Computer 环境变量</td><td>确认 pinned image 已构建、supervisor 已启动，且 Dot 的权限已开启。</td></tr><tr><td>页面保存冲突</td><td>检查页面 revision 和本地草稿</td><td>保留本地草稿，刷新服务器版本后合并，再重试保存。</td></tr><tr><td>语音连接失败</td><td>Realtime key/model、HTTPS、麦克风权限</td><td>确认语音 provider 单独可用；<code>OPENAI_BASE_URL</code> 不会改变语音 endpoint。</td></tr></tbody></table></section>
+
+<section id="sources"><h2>来源与代码索引</h2><ul><li><a href="../README.md">仓库 README</a>：产品定位、架构、功能边界和数据说明。</li><li><a href="../docs/SETUP.md">docs/SETUP.md</a>：本地开发、Intelligence、研究、Slack、语音、Docker、Learning。</li><li><a href="../docs/COMPUTERS.md">docs/COMPUTERS.md</a>：OpenBot Computer supervisor 与隔离边界。</li><li><a href="../docs/CONNECTIONS.md">docs/CONNECTIONS.md</a>：MCP 连接和审批。</li><li><a href="../src/server/index.ts">src/server/index.ts</a>：Node 服务入口、端口和环境变量。</li><li><a href="../src/server/platform-config.ts">src/server/platform-config.ts</a>：setup 状态和必需配置判断。</li><li><a href="../src/server/computer-service.ts">src/server/computer-service.ts</a>：Dot Computer API 适配。</li><li><a href="https://github.com/CopilotKit/OpenDots">GitHub: CopilotKit/OpenDots</a>：官方项目页面。</li><li><a href="https://docs.copilotkit.ai/intelligence/overview">CopilotKit Intelligence</a>：会话和托管能力。</li><li><a href="https://github.com/CopilotKit/OpenBot">OpenBot</a>：Computer 服务参考实现。</li><li><a href="https://docs.ag-ui.com/introduction">AG-UI</a>：运行时与界面之间的流式协议背景。</li></ul><footer>文档生成日期：2026-10-10。请以当前仓库代码、环境变量和外部服务版本为最终准确信息。</footer></section>
+</main></div>
+</body></html>

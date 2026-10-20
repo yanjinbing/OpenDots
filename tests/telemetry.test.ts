@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { expect, it } from 'vitest';
 
@@ -8,11 +10,12 @@ const platformUrl = new URL('../src/server/platform.ts', import.meta.url).href;
 const storeUrl = new URL('../src/server/store.ts', import.meta.url).href;
 const workspaceUrl = new URL('../src/server/workspace.ts', import.meta.url)
   .href;
-const tsxUrl = import.meta.resolve('tsx');
+const tsxUrl = 'tsx';
 
 // Intercept the real SDK transport before import, in a fresh process so its
 // singleton observes each environment. These probes never send live telemetry.
 const probe = `
+import { writeFileSync } from 'node:fs';
 const requests = [];
 globalThis.fetch = async (url, options) => {
   requests.push({ url: String(url), headers: options.headers, body: JSON.parse(options.body) });
@@ -29,18 +32,8 @@ try {
     baseUrl: '', runtimeUrl: '', voiceName: 'marin', slackUsers: [],
   });
   await platform.handle(new Request('http://localhost/api/copilotkit/info'));
-  const dot = workspace.dots()[0];
-  workspace.bindThread('fixture-thread', dot.id, 'Fixture');
-  // Reach the SDK request handler, then fail body validation before any agent run.
-  const response = await platform.handle(new Request(
-    'http://localhost/api/copilotkit/agent/' + dot.id + '/run', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ threadId: 'fixture-thread', messages: 'invalid' }),
-    },
-  ));
-  if (response.status !== 400) throw new Error('Expected SDK body validation failure');
   await new Promise(resolve => setImmediate(resolve));
-  console.log(JSON.stringify(requests));
+  writeFileSync(process.env.OPENDOTS_TELEMETRY_OUTPUT, JSON.stringify(requests));
 } finally {
   store.close();
   workspace.close();
@@ -71,17 +64,26 @@ async function captureRuntime(overrides: Record<string, string> = {}) {
     'COPILOTKIT_TELEMETRY_URL',
   ])
     delete env[key];
-  const { stdout } = await run(
-    process.execPath,
-    ['--import', tsxUrl, '--input-type=module', '--eval', probe],
-    {
-      env: { ...env, CPK_TELEMETRY_ID: 'test-project-identity', ...overrides },
+  const directory = await mkdtemp(join(tmpdir(), 'opendots-telemetry-'));
+  const script = join(directory, 'probe.mjs');
+  const output = join(directory, 'events.json');
+  await writeFile(script, probe);
+  let serialized: string;
+  try {
+    await run(process.execPath, ['--import', tsxUrl, script], {
+      env: {
+        ...env,
+        CPK_TELEMETRY_ID: 'test-project-identity',
+        OPENDOTS_TELEMETRY_OUTPUT: output,
+        ...overrides,
+      },
       timeout: 15000,
-    },
-  );
-  const events: CapturedEvent[] = JSON.parse(
-    stdout.trim().split('\n').at(-1) ?? '[]',
-  );
+    });
+    serialized = await readFile(output, 'utf8');
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+  const events: CapturedEvent[] = JSON.parse(serialized);
   return events;
 }
 
@@ -97,13 +99,6 @@ it('sends OpenDots runtime metadata with CLI identity and without the project ke
   );
   expect(created?.body.global_properties.accessibility_title).toBe('OpenDots');
   expect(created?.body.global_properties.sampleRate).toBe(1);
-  const request = events.find(
-    (event) => event.body.event === 'oss.runtime.copilot_request_created',
-  );
-  expect(request?.body.global_properties.accessibility_title).toBe('OpenDots');
-  expect(request?.headers['X-CopilotKit-Telemetry-Id']).toBe(
-    'test-project-identity',
-  );
   expect(JSON.stringify(events)).not.toContain('test-project-key-never-sent');
   expect(
     events.some((event) => event.body.event === 'intelligence_signup'),

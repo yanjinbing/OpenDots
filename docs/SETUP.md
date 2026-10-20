@@ -27,9 +27,9 @@ Open http://127.0.0.1:4310. Keep the server running for background work.
 
 ## Conversation services
 
-OpenDots requires CopilotKit Intelligence for conversations. Choose local evaluation below, a licensed [self-hosted deployment](https://docs.copilotkit.ai/intelligence/self-hosting), or hosted Intelligence. Pages and workspace metadata remain in SQLite; conversation history is stored separately. See [Data and privacy](../README.md#data-and-privacy).
+OpenDots now runs conversations through its local SSE runtime. Set `OPENAI_API_KEY` and `OPENAI_MODEL`; no CopilotKit Intelligence project is required. Messages and run events stay in bounded process memory and are cleared on server restart, while conversation metadata remains in SQLite. The Intelligence instructions below are retained only for older deployments and do not apply to local conversation mode.
 
-### Hosted Intelligence
+### Legacy hosted Intelligence
 
 To get a hosted project key, run these commands in the OpenDots folder after `cp .env.example .env`:
 
@@ -42,7 +42,7 @@ npx copilotkit@latest project select
 
 Do not run `copilotkit onboard` in this folder. Onboarding is for apps that do not have CopilotKit yet. OpenDots already has its integration.
 
-### Local Intelligence evaluation
+### Legacy local Intelligence evaluation
 
 The [local evaluation preview](https://docs.copilotkit.ai/intelligence/self-hosting-local) runs Intelligence in Docker Desktop on macOS. Allocate at least 4 CPUs, 12 GiB RAM, and 40 GiB free storage. OpenDots needs Node.js 24. A CopilotKit account is required; the free Developer plan qualifies for a renewable 30-day evaluation license. This is not a production installation.
 
@@ -83,7 +83,7 @@ Edit `.env` on the server and restart after changes:
 
 A non-empty `INTELLIGENCE_GATEWAY_WS_URL` takes precedence over `INTELLIGENCE_WS_URL`. Without either WebSocket override, OpenDots uses the hosted gateway. Set both the API and gateway endpoints when connecting a self-hosted deployment.
 
-The model environment variable names follow the configured provider adapter. Provider credentials belong in `.env`, not client-side variables or source code. Conversation history lives in the configured Intelligence project; copying the SQLite file alone does not back up that history.
+The model environment variable names follow the configured provider adapter. Provider credentials belong in `.env`, not client-side variables or source code. Conversation transcripts are not durable in local conversation mode; copying SQLite preserves their metadata but not their messages.
 
 ## Pages and page conversations
 
@@ -91,11 +91,11 @@ Select a Space to open its page library. Search for a document, switch between g
 
 Page actions include creating subpages, moving a page within its Space, deleting a page (its subpages move up to the deleted page's parent), and editing Markdown source. Existing documents with unsupported visual-editor syntax stay in source mode to preserve their content. Manual editing works without conversation credentials.
 
-Open a page's chat and choose a specialist with access to that Space. Grant access from the Dot’s settings in the sidebar. The server creates or reuses a CopilotKit Thread for that page and specialist. The Dot receives the current saved page as context and can read, create, and edit pages in its authorized Spaces. The page conversation uses that page’s Space by default; other chats use the Dot’s default page destination. Save your manual edits before asking it to revise the document. Revision checks reject stale writes; a conflict keeps your local draft available for recovery. Failed saves stop automatic retries until you retry or resolve the conflict, so a disconnected session does not silently replace newer content.
+Open a page's chat and choose a specialist with access to that Space. Grant access from the Dot’s settings in the sidebar. The server creates or reuses a local in-memory thread for that page and specialist. The Dot receives the current saved page as context and can read, create, and edit pages in its authorized Spaces. The page conversation uses that page’s Space by default; other chats use the Dot’s default page destination. Save your manual edits before asking it to revise the document. Revision checks reject stale writes; a conflict keeps your local draft available for recovery. Failed saves stop automatic retries until you retry or resolve the conflict, so a disconnected session does not silently replace newer content.
 
 Use the conversation's save-to-page action to create a document from its saved text history. This requires a working conversation service. Pages retain a link to the source conversation, and page links in chat open the document workspace.
 
-Back up both storage layers: SQLite contains page content and thread bindings; the Intelligence project contains conversation history. The template does not include multi-user page sharing, realtime collaboration, file uploads, or arbitrary interactive embeds.
+SQLite backups contain page content and thread bindings, but local conversation history is intentionally not backed up. The template does not include multi-user page sharing, realtime collaboration, file uploads, or arbitrary interactive embeds.
 
 ## Browser tool
 
@@ -127,6 +127,8 @@ Tool arguments and results pass through Composio and the connected app provider.
 For a separate browser, persistent files, and optional shell for each specialist, follow [Computer setup](COMPUTERS.md). This uses pinned OpenBot computer/supervisor services and per-Dot permissions. Parallel research tools remain available alongside configured computer tools. With the browser provider selected, Dots use their computer tools in place of the read-only public-page tool; enable each Dot's required capabilities before use.
 
 ## Slack
+
+Managed Slack Channels are unavailable in local conversation mode. The instructions in this section apply only to the previous Intelligence-backed runtime.
 
 OpenDots uses `@copilotkit/channels` with a managed Slack connection, following the runtime and channel pattern in [OpenTag](https://github.com/CopilotKit/OpenTag). The application declares the channel and its specialist agent; Intelligence manages the Slack adapter and delivery. You do not need a separate Slack webhook server or Socket Mode connection in OpenDots.
 
@@ -192,6 +194,8 @@ docker compose down
 For remote hosting, configure an HTTPS reverse proxy and the matching `APP_ORIGIN`. See [Security](../SECURITY.md) for the template's deployment boundary.
 
 ## Automatic Learning
+
+Automatic Learning and published-skill delivery are unavailable in local conversation mode. The instructions below apply only to the previous Intelligence-backed runtime.
 
 OpenDots connects [CopilotKit Automatic Learning](https://docs.copilotkit.ai/learning)
 to individual Dots. It uses the server-side Intelligence credential

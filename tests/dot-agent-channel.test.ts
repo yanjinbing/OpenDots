@@ -41,7 +41,7 @@ afterEach(() => {
   inner.configure.mockClear();
 });
 
-it('uses the conversation container for delivery and preserves tools and override restrictions', async () => {
+it('disables skill delivery and preserves tools and override restrictions', async () => {
   const f = fixture(false);
   const dot = f.workspace.dots()[0];
   f.workspace.updateDot(dot.id, {
@@ -70,21 +70,19 @@ it('uses the conversation container for delivery and preserves tools and overrid
   );
   expect(inner.configure).toHaveBeenLastCalledWith(
     expect.objectContaining({
-      learnedSkills: {
-        containers: [{ id: 'research' }],
-        apiKey: 'fixture',
-        apiUrl: undefined,
-      },
       type: 'tanstack',
       factory: expect.any(Function),
     }),
+  );
+  expect(inner.configure.mock.calls.at(-1)?.[0]).not.toHaveProperty(
+    'learnedSkills',
   );
   expect(inner.run).toHaveBeenLastCalledWith(
     expect.objectContaining({ tools: [], forwardedProps: {} }),
   );
   await lastValueFrom(f.agent.run(f.input).pipe(toArray()));
-  expect(inner.configure).toHaveBeenLastCalledWith(
-    expect.objectContaining({ learnedSkills: undefined, type: 'tanstack' }),
+  expect(inner.configure.mock.calls.at(-1)?.[0]).not.toHaveProperty(
+    'learnedSkills',
   );
   f.workspace.updateDot(dot.id, {
     ...dot,
@@ -94,8 +92,8 @@ it('uses the conversation container for delivery and preserves tools and overrid
   await lastValueFrom(
     f.agent.run({ ...f.input, threadId: 'learning' }).pipe(toArray()),
   );
-  expect(inner.configure).toHaveBeenLastCalledWith(
-    expect.objectContaining({ learnedSkills: undefined, type: 'tanstack' }),
+  expect(inner.configure.mock.calls.at(-1)?.[0]).not.toHaveProperty(
+    'learnedSkills',
   );
 });
 function fixture(channel = true) {
@@ -258,7 +256,7 @@ it.each(['abort', 'timeout'])(
         messageId: 'answer',
         delta: 'private answer',
       });
-      if (reason === 'timeout') await vi.advanceTimersByTimeAsync(90000);
+      if (reason === 'timeout') await vi.advanceTimersByTimeAsync(900000);
       else f.agent.abortRun();
       stream.next({
         type: EventType.RUN_FINISHED,

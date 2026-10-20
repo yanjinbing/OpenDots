@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
 import { TaskActions } from '../src/client/TaskActions';
-import type { Settings, Task } from '../src/shared/types';
+import { ThreadList } from '../src/client/ThreadList';
+import type { Dot, Settings, Task } from '../src/shared/types';
 const settings: Settings = {
   name: 'Dot',
   paused: false,
@@ -59,4 +60,36 @@ it('labels an interrupted task for owner review before retry', () => {
   );
   expect(html).toContain('Retry after review');
   expect(html).not.toContain('Pause task');
+});
+
+it('renders local conversation titles without a CopilotKit provider', () => {
+  const dot: Dot = {
+    id: 'dot',
+    spaceId: 'space',
+    spaceIds: ['space'],
+    name: 'Local Dot',
+    instructions: 'Help',
+    researchAllowed: true,
+    memoryAllowed: true,
+    createdAt: 1,
+  };
+  const html = renderToStaticMarkup(
+    <ThreadList
+      dots={[dot]}
+      local={[
+        {
+          id: 'thread',
+          dotId: dot.id,
+          ownerId: 'owner',
+          title: 'Local conversation',
+          createdAt: 1,
+        },
+      ]}
+      selected="thread"
+      onSelect={() => {}}
+      onNew={() => {}}
+    />,
+  );
+  expect(html).toContain('Local conversation');
+  expect(html).toContain('Local Dot');
 });

@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest';
 import {
-  INTELLIGENCE_KEY_MISSING_LABEL,
   setupStatus,
   type PlatformConfig,
 } from '../src/server/platform-config.js';
@@ -13,7 +12,7 @@ const config: PlatformConfig = {
   voiceName: 'marin',
   slackUsers: [],
 };
-it('never claims Slack online without a complete managed channel declaration', () => {
+it('reports managed Slack as unavailable in local conversation mode', () => {
   expect(setupStatus(config, 'online').slack).toBe('not_configured');
   expect(
     setupStatus({ ...config, slackChannel: 'support' }, 'online').slack,
@@ -28,9 +27,9 @@ it('never claims Slack online without a complete managed channel declaration', (
       },
       'online',
     ).slack,
-  ).toBe('online');
+  ).toBe('unavailable');
 });
-it('requires Intelligence and model setup and disables voice when either is absent', () => {
+it('requires model setup but not Intelligence and keeps configured voice ready', () => {
   expect(
     setupStatus({
       ...config,
@@ -39,19 +38,17 @@ it('requires Intelligence and model setup and disables voice when either is abse
       voiceModel: 'fixture',
     }),
   ).toMatchObject({
-    missing: [INTELLIGENCE_KEY_MISSING_LABEL],
-    voice: false,
+    missing: [],
+    voice: true,
   });
 });
-it('reports activation failure until the SDK recovers online', () => {
+it('does not activate managed Slack in local conversation mode', () => {
   const declared = {
     ...config,
     slackChannel: 'support',
     slackTeam: 'team',
     slackUsers: ['owner'],
   };
-  expect(setupStatus(declared, 'offline', true).slack).toBe(
-    'activation_failed',
-  );
-  expect(setupStatus(declared, 'online', true).slack).toBe('online');
+  expect(setupStatus(declared, 'offline', true).slack).toBe('unavailable');
+  expect(setupStatus(declared, 'online', true).slack).toBe('unavailable');
 });
